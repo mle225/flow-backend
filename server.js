@@ -42,9 +42,8 @@ app.post('/register', (req, res) => {
         })
         .then(user => {
           res.json(user[0]);
-          console.log(user[0]);
         })
-        .catch(err => res.status(400).json('Username/ Email already taken'))
+        .catch(err => res.status(400).json(err))
       })
       .then(trx.commit)
       .catch(trx.rollback)
@@ -71,6 +70,24 @@ app.post('/signin', (req, res) => {
         res.status(400).json('wrong email/password')
     })
     .catch(err => res.status(400).json('wrong email/password'))
+})
+
+//testing fetch data
+app.get('/trips/:name', (req, res) => {
+  const {name} = req.params;
+  let array=[];
+  db.select('tripid').from('member')
+  .where('name', '=', name)
+  .then(data => {
+    data.forEach(elem => {
+      db.select('tripname').from('trip')
+        .where('id', '=', elem.tripid)
+        .then(obj => array.push(obj[0]))
+    })
+    return array
+  })
+  .then(arr => res.json(arr))
+  .catch(err => res.status(400).json(err))
 })
 
 app.listen(3000, () => console.log(' app running on port 3000!'))
