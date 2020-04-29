@@ -73,21 +73,21 @@ app.post('/signin', (req, res) => {
 })
 
 //testing fetch data
-app.get('/trips/:name', (req, res) => {
-  const {name} = req.params;
-  let array=[];
-  db.select('tripid').from('member')
-  .where('name', '=', name)
-  .then(data => {
-    data.forEach(elem => {
-      db.select('tripname').from('trip')
-        .where('id', '=', elem.tripid)
-        .then(obj => array.push(obj[0]))
-    })
-    return array
-  })
-  .then(arr => res.json(arr))
-  .catch(err => res.status(400).json(err))
+app.get('/trips/:name', async (req, res) => {
+  try{
+    const {name} = req.params;
+    let arr = await db.select('tripid').from('member').where('name', '=', name);
+    if(arr && arr.length>0){
+      for(let item of arr){
+        let tripResult  = await db.select('tripname').from('trip').where('id', '=', item.tripid).catch(e=>e);
+        item.trip = tripResult && tripResult[0]? tripResult[0]:null;
+      }
+    }
+    return res.json(arr);
+  }
+  catch(error){
+    return res.status(400).json('user not found');
+  }
 })
 
 app.listen(3000, () => console.log(' app running on port 3000!'))
