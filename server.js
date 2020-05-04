@@ -106,4 +106,54 @@ app.get('/trips/:name/', async (req, res) => {
   }
 })
 
+// get trip events
+app.get('/goToTask/:tripid/', async (req, res) => {
+  try {
+    const {tripid} = req.params;
+    let events = await db.select('id', 'name').from('event').where('tripid', '=', tripid);
+    let trip = {
+      id: tripid,
+      avatar: '',
+      events: events
+    }
+    res.json(trip);
+  }
+  catch(error) {
+    res.status(400).json('trip not found');
+  }
+})
+
+// get event participants
+app.get('/goToAccounting/:eventid/', async(req, res) => {
+  try {
+    const {eventid} = req.params;
+    let accountings = []
+    let data = await db.select('*').from('participant').where('eventid', '=', eventid);
+    if (data && data.length > 0) {
+      for (let item of data) {
+        const memberid = item.memberid;
+        const name = (await db.select('name').from('account').where('id', '=', memberid))[0].name;
+        const paid = item.paid;
+        const joined = item.joined;
+        let accounting = {
+          id: memberid,
+          name: name,
+          paid: paid,
+          joined: joined,
+        }
+        accountings.push(accounting)
+      }
+    }
+    let event = {
+      id: eventid,
+      accountings: accountings,
+    }
+    res.json(event);
+  }
+  catch(error) {
+    res.status(400).json('accounting not found');
+  }
+})
+
+
 app.listen(3000, () => console.log(' app running on port 3000!'))
