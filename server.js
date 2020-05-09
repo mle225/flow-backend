@@ -155,5 +155,28 @@ app.get('/goToAccounting/:eventid/', async(req, res) => {
   }
 })
 
+// save accounting data
+app.put('/saveaccounting', async (req, res) => {
+  try {
+    const {memberid, eventid, paid, joined} = req.body;
+    db.select("paid", "joined")
+      .from("participant")
+      .where('memberid', '=', memberid)
+      .andWhere('eventid','=', eventid)
+      .update({
+        paid: parseFloat(paid).toFixed(2),
+        joined: joined,
+      })
+      .then(response => {
+        res.json("show this message to your fucking client !");
+      })
+      .catch(error => {
+        res.status(400).json("could not saved, what the fuck are you doing 1");
+      })
+  }
+  catch (error) {
+    res.status(400).json('could not saved, what the fuck are you doing 2');
+  }
+})
 
 app.listen(3000, () => console.log(' app running on port 3000!'))
