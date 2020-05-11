@@ -93,12 +93,14 @@ app.get('/trips/:name/', async (req, res) => {
   try{
     const {name} = req.params; 
     let arr = await db.select('tripid').from('member').where('name', '=', name);
+    console.log(arr);
     if(arr && arr.length>0){
       for(let item of arr){
         let tripResult  = await db.select('name').from('trip').where('id', '=', item.tripid).catch(e=>e);
         item.trip = tripResult && tripResult[0]? tripResult[0]:null;
       }
     }
+    console.log(arr);
     return res.json(arr);
   }
   catch(error){
