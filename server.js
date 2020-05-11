@@ -19,6 +19,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+// register account
 app.post('/register', (req, res) => {
   const {name, email, password} = req.body;
   const salt = bcrypt.genSaltSync(10);
@@ -36,10 +37,6 @@ app.post('/register', (req, res) => {
             const name = data2[0].name;
             let user = {
               id: id,
-              avatar: '',
-              name : name,
-              email: email,
-              trips : [],  
             }
             res.json(user);
           })
@@ -50,6 +47,7 @@ app.post('/register', (req, res) => {
   }).catch(err => res.status(400).json(err)) 
 })
 
+// sign in
 app.post('/signin', async (req, res) => {
   try {
     let data = await db.select('*').from('account').where('email', '=', req.body.email);
@@ -68,11 +66,7 @@ app.post('/signin', async (req, res) => {
           }
         }
         let user = {
-          id: id,
-          avatar: '',
-          name : name,
-          email: email,
-          trips : trips,  
+          id: id, 
         }
         res.json(user);
       }
@@ -82,6 +76,35 @@ app.post('/signin', async (req, res) => {
     } else {
       res.status(400).json('wrong email/password');
     }
+  }
+  catch (error) {
+    res.status(400).json('user not found');
+  }
+})
+
+// get user page
+app.get('/getUserPage/:userid/', async (req, res) => {
+  try {
+    const {userid} = req.params;
+    let data = await db.select('*').from('account').where('id', '=', userid);
+    const name = data[0].name;
+    const email = data[0].email;
+    let tripids = await db.select('tripid').from('member').where('id', '=', userid);
+    let trips = [];
+    if (tripids && tripids.length > 0) {
+      for (let item of tripids) {
+        let trip = await db.select('*').from('trip').where('id', '=', item.tripid);
+        trips.push(trip[0]);
+      }
+    }
+    let user = {
+      id: userid,
+      avatar: '',
+      name : name,
+      email: email,
+      trips : trips,  
+    }
+    res.json(user);
   }
   catch (error) {
     res.status(400).json('user not found');
@@ -108,14 +131,16 @@ app.get('/trips/:name/', async (req, res) => {
   }
 })
 
-// get trip events
-app.get('/goToTask/:tripid/', async (req, res) => {
+// get trip page
+app.get('/getTripPage/:tripid/', async (req, res) => {
   try {
     const {tripid} = req.params;
     let events = await db.select('id', 'name').from('event').where('tripid', '=', tripid);
+    let name = await db.select('name').from('trip').where('id', '=', tripid);
     let trip = {
       id: tripid,
       avatar: '',
+      name: name[0].name,
       events: events
     }
     res.json(trip);
@@ -126,7 +151,7 @@ app.get('/goToTask/:tripid/', async (req, res) => {
 })
 
 // get event participants
-app.get('/goToAccounting/:eventid/', async(req, res) => {
+app.get('/getAccountingPage/:eventid/', async(req, res) => {
   try {
     const {eventid} = req.params;
     let accountings = []
@@ -146,8 +171,10 @@ app.get('/goToAccounting/:eventid/', async(req, res) => {
         accountings.push(accounting)
       }
     }
+    let name = await db.select('name').from('event').where('id', '=', eventid);
     let event = {
       id: eventid,
+      name: name[0].name,
       accountings: accountings,
     }
     res.json(event);
